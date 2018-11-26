@@ -36,10 +36,15 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    subject.stream
+        .debounce(new Duration(milliseconds: 600))
+        .listen(_textChanged);
   }
 
   @override
-  void dispose() {}
+  void dispose() {
+    subject.close();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,11 +66,33 @@ class _SearchScreenState extends State<SearchScreen> {
                 border: OutlineInputBorder(),
                 labelStyle: new TextStyle(color: Colors.black),
               ),
+              onChanged: (string) => (subject.add(string)),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _textChanged(String text) {
+    if (text.isEmpty) {
+      setState(() {
+        _isLoading = false;
+      });
+      _clearList();
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
+    _clearList();
+    //todo network call
+  }
+
+  void _clearList() {
+    setState(() {
+      _items.clear();
+    });
   }
 }
 
