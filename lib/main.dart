@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() => runApp(new MyApp());
 
@@ -68,6 +70,38 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               onChanged: (string) => (subject.add(string)),
             ),
+            Container(
+              child: _isLoading
+                  ? Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    )
+                  : Container(),
+            ),
+            Flexible(
+              child: ListView.builder(
+                itemCount: _items.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return Card(
+                      child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Row(
+                            children: <Widget>[
+                              _items[index].url != null
+                                  ? Image.network(_items[index].url)
+                                  : Container(),
+                              Flexible(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child:
+                                      Text(_items[index].title, maxLines: 10),
+                                ),
+                              ),
+                            ],
+                          )));
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -86,12 +120,38 @@ class _SearchScreenState extends State<SearchScreen> {
       _isLoading = true;
     });
     _clearList();
-    //todo network call
+    http
+        .get("https://www.googleapis.com/books/v1/volumes?q=$text")
+        .then((response) => response.body)
+        .then(json.decode)
+        .then((map) => map["items"])
+        .then((list) {
+          list.forEach(_onNext);
+        })
+        .catchError(_onError)
+        .then((e) {
+          setState(() {
+            _isLoading = false;
+          });
+        });
   }
 
   void _clearList() {
     setState(() {
       _items.clear();
+    });
+  }
+
+  void _onNext(dynamic book) {
+    setState(() {
+      _items.add(new Book(book["volumeInfo"]["title"],
+          book["volumeInfo"]["imageLinks"]["smallThumbnail"]));
+    });
+  }
+
+  void _onError(dynamic d) {
+    setState(() {
+      _isLoading = false;
     });
   }
 }
