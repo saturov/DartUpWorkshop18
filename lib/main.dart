@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:book_list/models/book.dart';
+import 'book_page.dart';
+import 'package:book_list/utils/utils.dart';
 
 void main() => runApp(new MyApp());
 
@@ -82,23 +85,39 @@ class _SearchScreenState extends State<SearchScreen> {
               child: ListView.builder(
                 itemCount: _items.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return Card(
-                      child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Row(
-                            children: <Widget>[
-                              _items[index].url != null
-                                  ? Image.network(_items[index].url)
-                                  : Container(),
-                              Flexible(
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child:
-                                      Text(_items[index].title, maxLines: 10),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(FadeRoute(
+                        builder: (BuildContext context) =>
+                            BookNotesPage(_items[index]),
+                      ));
+                    },
+                    child: Card(
+                        child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              children: <Widget>[
+                                _items[index].url != null
+                                    ? new Hero(
+                                        child: new ClipRRect(
+                                          child:
+                                              Image.network(_items[index].url),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(15.0)),
+                                        ),
+                                        tag: _items[index].id,
+                                      )
+                                    : Container(),
+                                Flexible(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child:
+                                        Text(_items[index].title, maxLines: 10),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          )));
+                              ],
+                            ))),
+                  );
                 },
               ),
             ),
@@ -145,7 +164,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _onNext(dynamic book) {
     setState(() {
       _items.add(new Book(book["volumeInfo"]["title"],
-          book["volumeInfo"]["imageLinks"]["smallThumbnail"]));
+          book["volumeInfo"]["imageLinks"]["smallThumbnail"], book["id"]));
     });
   }
 
@@ -153,14 +172,5 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       _isLoading = false;
     });
-  }
-}
-
-class Book {
-  String title, url;
-
-  Book(String title, String url) {
-    this.title = title;
-    this.url = url;
   }
 }
